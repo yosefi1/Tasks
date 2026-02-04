@@ -100,7 +100,7 @@ export default function DashboardPage() {
 
   const taskSummary = useMemo(() => {
     const total = tasks.length;
-    const completed = tasks.filter((t) => t.status === "done").length;
+    const completed = tasks.filter((t: TaskWithSteps) => t.status === "done").length;
     const completionPct = total > 0 ? Math.round((completed / total) * 100) : 0;
     return { total, completed, completionPct };
   }, [tasks]);
