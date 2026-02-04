@@ -1,0 +1,61 @@
+// Neon (Postgres) for dev + production. Local: use Neon branch or local Postgres.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  category    String     // "personal" | "work"
+  status      String     // "backlog" | "in_progress" | "done"
+  progress    Int        @default(0) // 0-100 (manual or from steps)
+  dueDate     DateTime?
+  priority    String?    // "low" | "medium" | "high"
+  sortOrder   Int        @default(0) // for custom drag order
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  steps       TaskStep[]
+  links       TaskLink[]
+}
+
+model TaskLink {
+  id          String   @id @default(cuid())
+  taskId      String
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  url         String
+  displayName String   // user-chosen label (e.g. "Facebook reel")
+  note        String?
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model TaskStep {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  title     String
+  completed Boolean  @default(false)
+  progress  Int      @default(0) // 0-100 how much this step is done
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model Source {
+  id        String   @id @default(cuid())
+  title     String
+  url       String
+  type      String   // "site" | "video"
+  category  String   // "private" | "work"
+  topic     String?  // user-defined: AI, ART, PPT, etc.
+  sortOrder Int      @default(0)
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
