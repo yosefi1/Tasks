@@ -381,7 +381,7 @@ export default function DashboardPage() {
       <TaskFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
-        task={editingTask ? tasks.find((t) => t.id === editingTask.id) ?? editingTask : null}
+        task={editingTask ? tasks.find((t: TaskWithSteps) => t.id === editingTask.id) ?? editingTask : null}
         filters={taskFilters}
         onDelete={(task) => {
           setFormOpen(false);
@@ -406,7 +406,7 @@ export default function DashboardPage() {
         onOpenChange={setSourceFormOpen}
         source={editingSource}
         defaultCategory="private"
-        existingTopics={[...new Set(sources.map((s) => (s as { topic?: string | null }).topic).filter(Boolean))] as string[]}
+        existingTopics={[...new Set(sources.map((s: Source) => (s as { topic?: string | null }).topic).filter(Boolean))] as string[]}
       />
       <DeleteSourceDialog
         open={sourceDeleteOpen}
