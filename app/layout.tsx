@@ -10,7 +10,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Task Manager",
-  description: "Local-first personal task management",
+  description: "Personal tasks and sources (Neon + Vercel)",
 };
 
 export default function RootLayout({
