@@ -1,4 +1,4 @@
-// Neon (Postgres) for dev + production. Local: use Neon branch or local Postgres.
+// Neon Postgres — Vercel + production. Local dev: same URLs in `.env` from Neon console.
 generator client {
   provider = "prisma-client-js"
 }
@@ -47,15 +47,24 @@ model TaskStep {
   createdAt DateTime @default(now())
 }
 
-model Source {
+model SourceCategory {
   id        String   @id @default(cuid())
-  title     String
-  url       String
-  type      String   // "site" | "video"
-  category  String   // "private" | "work"
-  topic     String?  // user-defined: AI, ART, PPT, etc.
+  name      String   @unique
   sortOrder Int      @default(0)
-  notes     String?
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  sources   Source[]
+}
+
+model Source {
+  id         String         @id @default(cuid())
+  title      String
+  url        String
+  type       String // "site" | "video"
+  categoryId String
+  category   SourceCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  topic      String? // user-defined: AI, ART, PPT, etc.
+  sortOrder  Int            @default(0)
+  notes      String?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
 }

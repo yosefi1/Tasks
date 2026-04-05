@@ -10,12 +10,12 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink } from "lucide-react";
-import type { Source } from "@prisma/client";
+import type { SourceWithCategory } from "@/lib/types";
 import { shortUrlDisplay } from "@/lib/source-utils";
 
 type SourcesTableProps = {
-  sources: Source[];
-  onRowClick: (source: Source) => void;
+  sources: SourceWithCategory[];
+  onRowClick: (source: SourceWithCategory) => void;
 };
 
 export function SourcesTable({ sources, onRowClick }: SourcesTableProps) {
@@ -54,8 +54,8 @@ export function SourcesTable({ sources, onRowClick }: SourcesTableProps) {
                 </span>
               </TableCell>
               <TableCell>
-                <Badge variant="outline" className="capitalize">
-                  {source.category}
+                <Badge variant="outline">
+                  {source.category.name}
                 </Badge>
               </TableCell>
               <TableCell onClick={(e) => e.stopPropagation()}>

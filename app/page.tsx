@@ -20,11 +20,13 @@ import { SourceDetailDialog } from "@/components/source-detail-dialog";
 import { SourceFormDialog } from "@/components/source-form-dialog";
 import { DeleteSourceDialog } from "@/components/delete-source-dialog";
 import { BulkPasteSourcesDialog } from "@/components/bulk-paste-sources-dialog";
+import { SourceCategoriesSettingsDialog } from "@/components/source-categories-settings-dialog";
 import { useTasks } from "@/lib/hooks/use-tasks";
 import { useSources } from "@/lib/hooks/use-sources";
+import { useSourceCategories } from "@/lib/hooks/use-source-categories";
 import { SortableTaskList } from "@/components/sortable-task-list";
 import type { TaskWithSteps } from "@/lib/types";
-import type { Source } from "@prisma/client";
+import type { SourceWithCategory } from "@/lib/types";
 import {
   Plus,
   Search,
@@ -34,6 +36,7 @@ import {
   ListTodo,
   Bookmark,
   FileText,
+  Settings,
 } from "lucide-react";
 
 const statusOptions = [
@@ -67,9 +70,10 @@ export default function DashboardPage() {
   const [sourceDetailOpen, setSourceDetailOpen] = useState(false);
   const [sourceDeleteOpen, setSourceDeleteOpen] = useState(false);
   const [bulkPasteOpen, setBulkPasteOpen] = useState(false);
-  const [editingSource, setEditingSource] = useState<Source | null>(null);
-  const [selectedSource, setSelectedSource] = useState<Source | null>(null);
-  const [deletingSource, setDeletingSource] = useState<Source | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [editingSource, setEditingSource] = useState<SourceWithCategory | null>(null);
+  const [selectedSource, setSelectedSource] = useState<SourceWithCategory | null>(null);
+  const [deletingSource, setDeletingSource] = useState<SourceWithCategory | null>(null);
   const [sourcesSearch, setSourcesSearch] = useState("");
 
   const taskFilters = useMemo(
@@ -98,6 +102,13 @@ export default function DashboardPage() {
     error: sourcesErrorObj,
   } = useSources(sourceFilters);
 
+  const {
+    data: sourceCategories = [],
+    isLoading: categoriesLoading,
+  } = useSourceCategories();
+
+  const defaultSourceCategoryId = sourceCategories[0]?.id ?? "";
+
   const taskSummary = useMemo(() => {
     const total = tasks.length;
     const completed = tasks.filter((t: TaskWithSteps) => t.status === "done").length;
@@ -122,11 +133,11 @@ export default function DashboardPage() {
     setEditingSource(null);
     setSourceFormOpen(true);
   };
-  const openEditSource = (source: Source) => {
+  const openEditSource = (source: SourceWithCategory) => {
     setEditingSource(source);
     setSourceFormOpen(true);
   };
-  const openDeleteSource = (source: Source) => {
+  const openDeleteSource = (source: SourceWithCategory) => {
     setDeletingSource(source);
     setSourceDeleteOpen(true);
   };
@@ -145,7 +156,18 @@ export default function DashboardPage() {
             </Button>
           )}
           {mainTab === "sources" && (
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="shrink-0"
+                onClick={() => setSettingsOpen(true)}
+                aria-label="Source categories settings"
+                title="Source categories"
+              >
+                <Settings className="h-5 w-5" />
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
@@ -310,7 +332,7 @@ export default function DashboardPage() {
               )}
               {!isLoading && !isError && tasks.length > 0 && taskOrderBy === "date" && (
                 <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {tasks.map((task) => (
+                  {tasks.map((task: TaskWithSteps) => (
                     <li key={task.id}>
                       <TaskCard task={task} onCardClick={openEditTask} />
                     </li>
@@ -405,8 +427,15 @@ export default function DashboardPage() {
         open={sourceFormOpen}
         onOpenChange={setSourceFormOpen}
         source={editingSource}
-        defaultCategory="private"
-        existingTopics={[...new Set(sources.map((s: Source) => (s as { topic?: string | null }).topic).filter(Boolean))] as string[]}
+        categories={sourceCategories}
+        defaultCategoryId={defaultSourceCategoryId}
+        existingTopics={Array.from(
+          new Set(
+            sources
+              .map((s: SourceWithCategory) => s.topic)
+              .filter((t): t is string => typeof t === "string" && t.length > 0)
+          )
+        )}
       />
       <DeleteSourceDialog
         open={sourceDeleteOpen}
@@ -416,7 +445,14 @@ export default function DashboardPage() {
       <BulkPasteSourcesDialog
         open={bulkPasteOpen}
         onOpenChange={setBulkPasteOpen}
-        category="private"
+        categories={sourceCategories}
+        defaultCategoryId={defaultSourceCategoryId}
+      />
+      <SourceCategoriesSettingsDialog
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        categories={sourceCategories}
+        categoriesLoading={categoriesLoading}
       />
     </div>
   );

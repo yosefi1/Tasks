@@ -10,13 +10,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, ExternalLink } from "lucide-react";
-import type { Source } from "@prisma/client";
+import type { SourceWithCategory } from "@/lib/types";
 
 type SourceDetailDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  source: Source | null;
-  onDelete: (source: Source) => void;
+  source: SourceWithCategory | null;
+  onDelete: (source: SourceWithCategory) => void;
 };
 
 export function SourceDetailDialog({
@@ -40,8 +40,8 @@ export function SourceDetailDialog({
             <Badge variant="secondary" className="capitalize">
               {source.type}
             </Badge>
-            <Badge variant="outline" className="capitalize">
-              {source.category}
+            <Badge variant="outline">
+              {source.category.name}
             </Badge>
             {topic && (
               <Badge variant="outline">{topic}</Badge>

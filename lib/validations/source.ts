@@ -1,7 +1,6 @@
 import { z } from "zod";
 
 const typeEnum = z.enum(["site", "video"]);
-const categoryEnum = z.enum(["private", "work"]);
 
 const urlTransform = z
   .string()
@@ -17,7 +16,7 @@ export const sourceSchema = z.object({
   title: z.string().min(1, "Title is required").max(300),
   url: urlTransform,
   type: typeEnum,
-  category: categoryEnum,
+  categoryId: z.string().min(1, "Category is required"),
   topic: z.string().max(100).optional().or(z.literal("")),
   sortOrder: z.coerce.number().int().min(0),
   notes: z.string().max(2000).optional().or(z.literal("")),

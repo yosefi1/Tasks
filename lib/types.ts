@@ -1,4 +1,4 @@
-import type { Task, TaskStep, TaskLink } from "@prisma/client";
+import type { Task, TaskStep, TaskLink, Source, SourceCategory } from "@prisma/client";
 
 export type TaskCategory = "personal" | "work";
 export type TaskStatus = "backlog" | "in_progress" | "done";
@@ -22,4 +22,6 @@ export type TaskFormValues = {
   priority?: TaskPriority;
 };
 
-export { type Task, type TaskStep, type TaskLink };
+export type SourceWithCategory = Source & { category: SourceCategory };
+
+export { type Task, type TaskStep, type TaskLink, type Source, type SourceCategory };

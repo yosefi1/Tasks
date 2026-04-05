@@ -4,18 +4,18 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2, ExternalLink, Video } from "lucide-react";
-import type { Source } from "@prisma/client";
+import type { SourceWithCategory } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type SourceCardProps = {
-  source: Source;
-  onEdit: (source: Source) => void;
-  onDelete: (source: Source) => void;
+  source: SourceWithCategory;
+  onEdit: (source: SourceWithCategory) => void;
+  onDelete: (source: SourceWithCategory) => void;
 };
 
 export function SourceCard({ source, onEdit, onDelete }: SourceCardProps) {
   const isVideo = source.type === "video";
-  const categoryLabel = source.category === "work" ? "Work" : "Private";
+  const categoryLabel = source.category.name;
 
   return (
     <Card className="flex flex-col transition-shadow hover:shadow-md">

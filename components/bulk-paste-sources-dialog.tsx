@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -20,29 +20,51 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { useBulkCreateSources } from "@/lib/hooks/use-sources";
+import type { SourceCategory } from "@prisma/client";
 
 type BulkPasteSourcesDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  category: "private" | "work";
+  categories: SourceCategory[];
+  defaultCategoryId: string;
 };
 
 export function BulkPasteSourcesDialog({
   open,
   onOpenChange,
-  category,
+  categories,
+  defaultCategoryId,
 }: BulkPasteSourcesDialogProps) {
   const { toast } = useToast();
   const bulkCreate = useBulkCreateSources();
   const [pastedText, setPastedText] = useState("");
   const [type, setType] = useState<"site" | "video">("site");
+  const [categoryId, setCategoryId] = useState(defaultCategoryId);
+
+  useEffect(() => {
+    if (open) {
+      const first = categories[0]?.id;
+      setCategoryId((prev) => {
+        if (prev && categories.some((c) => c.id === prev)) return prev;
+        return defaultCategoryId || first || "";
+      });
+    }
+  }, [open, categories, defaultCategoryId]);
 
   async function handleSubmit() {
+    if (!categoryId) {
+      toast({
+        title: "Choose a category",
+        description: "Add categories in settings if none are listed.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (!pastedText.trim()) {
       toast({ title: "Paste some content", description: "Add URLs or lines with Title | URL.", variant: "destructive" });
       return;
     }
-    const result = await bulkCreate.mutateAsync({ category, pastedText, type });
+    const result = await bulkCreate.mutateAsync({ categoryId, pastedText, type });
     toast({
       title: "Sources added",
       description: `${result.created} source(s) added.`,
@@ -71,21 +93,40 @@ export function BulkPasteSourcesDialog({
             className="font-mono text-sm"
           />
         </div>
-        <div className="space-y-2">
-          <Label>Type</Label>
-          <Select value={type} onValueChange={(v) => setType(v as "site" | "video")}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="site">Site</SelectItem>
-              <SelectItem value="video">Video</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Type</Label>
+            <Select value={type} onValueChange={(v) => setType(v as "site" | "video")}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="site">Site</SelectItem>
+                <SelectItem value="video">Video</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Category</Label>
+            <Select
+              value={categoryId}
+              onValueChange={setCategoryId}
+              disabled={!categories.length}
+            >
+              <SelectTrigger><SelectValue placeholder="Category" /></SelectTrigger>
+              <SelectContent>
+                {categories.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={bulkCreate.isPending}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={bulkCreate.isPending || !pastedText.trim()}>
+          <Button onClick={handleSubmit} disabled={bulkCreate.isPending || !pastedText.trim() || !categoryId}>
             {bulkCreate.isPending ? "Adding…" : "Add all"}
           </Button>
         </DialogFooter>

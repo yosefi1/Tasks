@@ -21,7 +21,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { sourceSchema, type SourceSchema } from "@/lib/validations/source";
-import type { Source } from "@prisma/client";
+import type { SourceCategory } from "@prisma/client";
+import type { SourceWithCategory } from "@/lib/types";
 import { useToast } from "@/components/ui/use-toast";
 import { useCreateSource, useUpdateSource } from "@/lib/hooks/use-sources";
 import { useEffect } from "react";
@@ -29,8 +30,9 @@ import { useEffect } from "react";
 type SourceFormDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  source?: Source | null;
-  defaultCategory?: "private" | "work";
+  source?: SourceWithCategory | null;
+  categories: SourceCategory[];
+  defaultCategoryId: string;
   existingTopics?: string[];
 };
 
@@ -39,22 +41,20 @@ const typeOptions = [
   { value: "video", label: "Video" },
 ];
 
-const categoryOptions = [
-  { value: "private", label: "Private" },
-  { value: "work", label: "Work" },
-];
-
 export function SourceFormDialog({
   open,
   onOpenChange,
   source,
-  defaultCategory = "private",
+  categories,
+  defaultCategoryId,
   existingTopics = [],
 }: SourceFormDialogProps) {
   const { toast } = useToast();
   const createSource = useCreateSource();
   const updateSource = useUpdateSource();
   const isEdit = !!source?.id;
+  const effectiveDefault =
+    defaultCategoryId || categories[0]?.id || "";
 
   const form = useForm<SourceSchema>({
     resolver: zodResolver(sourceSchema),
@@ -62,7 +62,7 @@ export function SourceFormDialog({
       title: "",
       url: "",
       type: "site",
-      category: defaultCategory,
+      categoryId: effectiveDefault,
       topic: "",
       sortOrder: 0,
       notes: "",
@@ -75,8 +75,8 @@ export function SourceFormDialog({
         title: source.title,
         url: source.url,
         type: source.type as "site" | "video",
-        category: source.category as "private" | "work",
-        topic: (source as { topic?: string | null }).topic ?? "",
+        categoryId: source.categoryId,
+        topic: source.topic ?? "",
         sortOrder: source.sortOrder,
         notes: source.notes ?? "",
       });
@@ -85,15 +85,23 @@ export function SourceFormDialog({
         title: "",
         url: "",
         type: "site",
-        category: defaultCategory,
+        categoryId: effectiveDefault,
         topic: "",
         sortOrder: 0,
         notes: "",
       });
     }
-  }, [source, open, defaultCategory, form]);
+  }, [source, open, effectiveDefault, form]);
 
   async function onSubmit(values: SourceSchema) {
+    if (!categories.length) {
+      toast({
+        title: "Add a category first",
+        description: "Open settings (gear) and create at least one source category.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (isEdit && source) {
       const result = await updateSource.mutateAsync({ id: source.id, data: values });
       if (result.error) {
@@ -113,6 +121,9 @@ export function SourceFormDialog({
   }
 
   const isPending = createSource.isPending || updateSource.isPending;
+  const categoryIdWatch = form.watch("categoryId");
+  const categorySelectValue =
+    categories.some((c) => c.id === categoryIdWatch) ? categoryIdWatch : effectiveDefault;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -180,13 +191,16 @@ export function SourceFormDialog({
             <div className="space-y-2">
               <Label>Category</Label>
               <Select
-                value={form.watch("category")}
-                onValueChange={(v) => form.setValue("category", v as "private" | "work")}
+                value={categorySelectValue}
+                onValueChange={(v) => form.setValue("categoryId", v)}
+                disabled={!categories.length}
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Choose category" /></SelectTrigger>
                 <SelectContent>
-                  {categoryOptions.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  {categories.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -200,7 +214,7 @@ export function SourceFormDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending}>
+            <Button type="submit" disabled={isPending || !categories.length}>
               {isPending ? "Saving…" : isEdit ? "Update" : "Add"}
             </Button>
           </DialogFooter>

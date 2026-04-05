@@ -11,7 +11,7 @@ import {
 import type { SourceSchema } from "@/lib/validations/source";
 
 function sourcesKey(filters: SourceFilters) {
-  return ["sources", filters.category ?? "", filters.type ?? "", filters.search ?? ""] as const;
+  return ["sources", filters.categoryId ?? "", filters.type ?? "", filters.search ?? ""] as const;
 }
 
 export function useSources(filters: SourceFilters = {}) {
@@ -19,7 +19,7 @@ export function useSources(filters: SourceFilters = {}) {
     queryKey: sourcesKey(filters),
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (filters.category) params.set("category", filters.category);
+      if (filters.categoryId) params.set("categoryId", filters.categoryId);
       if (filters.type) params.set("type", filters.type);
       if (filters.search) params.set("search", filters.search);
       const res = await fetch(`/api/sources?${params.toString()}`);
@@ -58,14 +58,14 @@ export function useBulkCreateSources() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({
-      category,
+      categoryId,
       pastedText,
       type,
     }: {
-      category: "private" | "work";
+      categoryId: string;
       pastedText: string;
       type?: "site" | "video";
-    }) => bulkCreateSources(category, pastedText, type),
+    }) => bulkCreateSources(categoryId, pastedText, type),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["sources"] }),
   });
 }

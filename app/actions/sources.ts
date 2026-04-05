@@ -6,7 +6,7 @@ import type { Prisma } from "@prisma/client";
 import { sourceSchema, type SourceSchema } from "@/lib/validations/source";
 
 export type SourceFilters = {
-  category?: "private" | "work";
+  categoryId?: string;
   type?: "site" | "video";
   search?: string;
 };
@@ -14,7 +14,7 @@ export type SourceFilters = {
 export async function getSources(filters: SourceFilters = {}) {
   const where: Prisma.SourceWhereInput = {};
 
-  if (filters.category) where.category = filters.category;
+  if (filters.categoryId) where.categoryId = filters.categoryId;
   if (filters.type) where.type = filters.type;
   if (filters.search?.trim()) {
     where.OR = [
@@ -25,6 +25,7 @@ export async function getSources(filters: SourceFilters = {}) {
 
   const sources = await prisma.source.findMany({
     where,
+    include: { category: true },
     orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
   });
   return sources;
@@ -36,6 +37,7 @@ export async function createSource(data: SourceSchema) {
   const { topic, ...rest } = parsed.data;
   const source = await prisma.source.create({
     data: { ...rest, topic: topic || null },
+    include: { category: true },
   });
   revalidatePath("/");
   return { data: source };
@@ -48,6 +50,7 @@ export async function updateSource(id: string, data: SourceSchema) {
   const source = await prisma.source.update({
     where: { id },
     data: { ...rest, topic: topic || null },
+    include: { category: true },
   });
   revalidatePath("/");
   return { data: source };
@@ -61,7 +64,7 @@ export async function deleteSource(id: string) {
 
 /** Parse pasted text: one item per line, optional "title | url" or just URL */
 export async function bulkCreateSources(
-  category: "private" | "work",
+  categoryId: string,
   pastedText: string,
   type: "site" | "video" = "site"
 ) {
@@ -94,7 +97,7 @@ export async function bulkCreateSources(
       title: title || url,
       url,
       type,
-      category,
+      categoryId,
       topic: "",
       sortOrder: created.length,
       notes: "",
