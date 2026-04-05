@@ -36,6 +36,11 @@ export function SourcesTable({ sources, onRowClick }: SourcesTableProps) {
             <TableRow
               key={source.id}
               className="cursor-pointer"
+              style={
+                source.category.color && /^#[0-9A-Fa-f]{6}$/.test(source.category.color)
+                  ? { borderLeftWidth: 4, borderLeftColor: source.category.color }
+                  : undefined
+              }
               onClick={() => onRowClick(source)}
             >
               <TableCell className="font-medium">

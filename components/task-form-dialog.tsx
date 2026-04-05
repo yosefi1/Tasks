@@ -35,6 +35,7 @@ import {
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
+import { ColorPresetRow } from "@/components/color-preset-row";
 
 type TaskFormDialogProps = {
   open: boolean;
@@ -97,6 +98,7 @@ export function TaskFormDialog({
       progress: 0,
       dueDate: "",
       priority: "none",
+      accentColor: "",
     },
   });
 
@@ -125,6 +127,8 @@ export function TaskFormDialog({
           ? format(new Date(task.dueDate), "yyyy-MM-dd")
           : "",
         priority: (task.priority as "low" | "medium" | "high") ?? "none",
+        accentColor:
+          task.accentColor && /^#[0-9A-Fa-f]{6}$/.test(task.accentColor) ? task.accentColor : "",
       });
       setPendingSteps([]);
       setPendingLinks([]);
@@ -137,6 +141,7 @@ export function TaskFormDialog({
         progress: 0,
         dueDate: "",
         priority: (filters.priority as "low" | "medium" | "high") ?? "none",
+        accentColor: "",
       });
       setPendingSteps([]);
       setNewStepTitle("");
@@ -544,6 +549,28 @@ export function TaskFormDialog({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Label>Card color (optional)</Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs"
+                onClick={() => form.setValue("accentColor", "")}
+              >
+                Use tab default
+              </Button>
+            </div>
+            <ColorPresetRow
+              value={form.watch("accentColor") ?? ""}
+              onChange={(v) => form.setValue("accentColor", v, { shouldValidate: true, shouldDirty: true })}
+            />
+            {form.formState.errors.accentColor && (
+              <p className="text-sm text-destructive">{form.formState.errors.accentColor.message}</p>
+            )}
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0 flex-wrap">

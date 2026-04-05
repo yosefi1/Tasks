@@ -15,23 +15,31 @@ import {
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
+  rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { TaskCard } from "@/components/task-card";
+import { TaskCard, type TaskCardViewVariant } from "@/components/task-card";
 import type { TaskWithSteps } from "@/lib/types";
 import { useUpdateTaskOrder } from "@/lib/hooks/use-tasks";
+import { cn } from "@/lib/utils";
 
 type SortableTaskListProps = {
   tasks: TaskWithSteps[];
   onCardClick: (task: TaskWithSteps) => void;
+  viewMode?: TaskCardViewVariant;
+  categoryColors?: Record<string, string>;
 };
 
 function SortableTaskItem({
   task,
   onCardClick,
+  viewMode,
+  categoryColors,
 }: {
   task: TaskWithSteps;
   onCardClick: (task: TaskWithSteps) => void;
+  viewMode: TaskCardViewVariant;
+  categoryColors: Record<string, string>;
 }) {
   const {
     attributes,
@@ -53,12 +61,19 @@ function SortableTaskItem({
         task={task}
         onCardClick={onCardClick}
         dragHandleProps={{ ...attributes, ...listeners }}
+        variant={viewMode}
+        categoryColors={categoryColors}
       />
     </li>
   );
 }
 
-export function SortableTaskList({ tasks, onCardClick }: SortableTaskListProps) {
+export function SortableTaskList({
+  tasks,
+  onCardClick,
+  viewMode = "grid",
+  categoryColors = {},
+}: SortableTaskListProps) {
   const updateOrder = useUpdateTaskOrder();
 
   const sensors = useSensors(
@@ -80,15 +95,26 @@ export function SortableTaskList({ tasks, onCardClick }: SortableTaskListProps) 
     updateOrder.mutate(reordered.map((t) => t.id));
   }
 
+  const strategy =
+    viewMode === "list" ? verticalListSortingStrategy : rectSortingStrategy;
+
+  const listClass = cn(
+    viewMode === "list" && "flex flex-col gap-2",
+    viewMode === "grid" && "grid gap-4 sm:grid-cols-2 lg:grid-cols-3",
+    viewMode === "compact" && "grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+  );
+
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <SortableContext items={tasks.map((t) => t.id)} strategy={strategy}>
+        <ul className={listClass}>
           {tasks.map((task) => (
             <SortableTaskItem
               key={task.id}
               task={task}
               onCardClick={onCardClick}
+              viewMode={viewMode}
+              categoryColors={categoryColors}
             />
           ))}
         </ul>

@@ -9,6 +9,12 @@ datasource db {
   directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
+model TaskCategoryStyle {
+  id    String @id @default(cuid())
+  slug  String @unique // "personal" | "work"
+  color String // hex e.g. #8b5cf6
+}
+
 model Task {
   id          String     @id @default(cuid())
   title       String
@@ -19,6 +25,7 @@ model Task {
   dueDate     DateTime?
   priority    String?    // "low" | "medium" | "high"
   sortOrder   Int        @default(0) // for custom drag order
+  accentColor String? // optional per-card stripe (hex)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   steps       TaskStep[]
@@ -50,6 +57,7 @@ model TaskStep {
 model SourceCategory {
   id        String   @id @default(cuid())
   name      String   @unique
+  color     String? // optional hex accent for table / badges
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
   sources   Source[]

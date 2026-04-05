@@ -12,6 +12,14 @@ export const taskSchema = z.object({
   progress: z.coerce.number().min(0).max(100),
   dueDate: z.string().optional().or(z.literal("")),
   priority: priorityEnum.optional().nullable().or(z.literal("")).or(z.literal("none")),
+  accentColor: z
+    .string()
+    .optional()
+    .transform((s) => {
+      const t = (s ?? "").trim();
+      if (!t) return "";
+      return /^#[0-9A-Fa-f]{6}$/.test(t) ? t : "";
+    }),
 });
 
 export type TaskSchema = z.infer<typeof taskSchema>;

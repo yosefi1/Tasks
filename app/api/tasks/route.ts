@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server";
-import { getTasks } from "@/app/actions/tasks";
+import { getTasks, type TaskOrderBy } from "@/app/actions/tasks";
+
+const ORDER_OPTIONS: TaskOrderBy[] = ["date", "custom", "priority", "title", "status"];
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,7 +10,10 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status") ?? undefined;
     const priority = searchParams.get("priority") ?? undefined;
     const search = searchParams.get("search") ?? undefined;
-    const orderBy = (searchParams.get("orderBy") as "date" | "custom") ?? "date";
+    const rawOrder = searchParams.get("orderBy") ?? "date";
+    const orderBy = ORDER_OPTIONS.includes(rawOrder as TaskOrderBy)
+      ? (rawOrder as TaskOrderBy)
+      : "date";
 
     const tasks = await getTasks({ category, status, priority, search, orderBy });
     return Response.json(tasks);

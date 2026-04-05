@@ -21,7 +21,8 @@ export function useSourceCategories() {
 export function useCreateSourceCategory() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (name: string) => createSourceCategory(name),
+    mutationFn: (payload: { name: string; color?: string | null }) =>
+      createSourceCategory(payload.name, payload.color),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["source-categories"] });
       queryClient.invalidateQueries({ queryKey: ["sources"] });
@@ -32,8 +33,8 @@ export function useCreateSourceCategory() {
 export function useUpdateSourceCategory() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, name }: { id: string; name: string }) =>
-      updateSourceCategory(id, name),
+    mutationFn: ({ id, name, color }: { id: string; name: string; color?: string | null }) =>
+      updateSourceCategory(id, name, color),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["source-categories"] });
       queryClient.invalidateQueries({ queryKey: ["sources"] });

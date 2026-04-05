@@ -5,13 +5,46 @@ import { prisma } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
 import { taskSchema, type TaskSchema } from "@/lib/validations/task";
 
+export type TaskOrderBy = "date" | "custom" | "priority" | "title" | "status";
+
 export type TaskFilters = {
   category?: string;
   status?: string;
   priority?: string;
   search?: string;
-  orderBy?: "date" | "custom";
+  orderBy?: TaskOrderBy;
 };
+
+function sortTasksInMemory<
+  T extends { title: string; priority: string | null; status: string },
+>(tasks: T[], orderBy: TaskOrderBy): T[] {
+  const copy = [...tasks];
+  if (orderBy === "priority") {
+    const rank: Record<string, number> = { high: 0, medium: 1, low: 2 };
+    copy.sort((a, b) => {
+      const da = a.priority != null ? rank[a.priority] ?? 99 : 100;
+      const db = b.priority != null ? rank[b.priority] ?? 99 : 100;
+      if (da !== db) return da - db;
+      return a.title.localeCompare(b.title, undefined, { sensitivity: "base" });
+    });
+    return copy;
+  }
+  if (orderBy === "title") {
+    copy.sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: "base" }));
+    return copy;
+  }
+  if (orderBy === "status") {
+    const rank: Record<string, number> = { backlog: 0, in_progress: 1, done: 2 };
+    copy.sort((a, b) => {
+      const da = rank[a.status] ?? 9;
+      const db = rank[b.status] ?? 9;
+      if (da !== db) return da - db;
+      return a.title.localeCompare(b.title, undefined, { sensitivity: "base" });
+    });
+    return copy;
+  }
+  return copy;
+}
 
 export async function getTasks(filters: TaskFilters = {}) {
   const where: Prisma.TaskWhereInput = {};
@@ -23,8 +56,9 @@ export async function getTasks(filters: TaskFilters = {}) {
     where.title = { contains: filters.search.trim() };
   }
 
+  const ob = filters.orderBy ?? "date";
   const orderBy: Prisma.TaskOrderByWithRelationInput[] =
-    filters.orderBy === "date"
+    ob === "date"
       ? [{ dueDate: "asc" }, { updatedAt: "desc" }, { createdAt: "desc" }]
       : [{ sortOrder: "asc" }, { updatedAt: "desc" }, { createdAt: "desc" }];
 
@@ -36,6 +70,11 @@ export async function getTasks(filters: TaskFilters = {}) {
       links: { orderBy: { sortOrder: "asc" } },
     },
   });
+
+  if (ob === "priority" || ob === "title" || ob === "status") {
+    return sortTasksInMemory(tasks, ob);
+  }
+
   return tasks;
 }
 
@@ -68,7 +107,7 @@ export async function createTask(data: TaskSchema) {
   if (!parsed.success) {
     return { error: parsed.error.flatten().fieldErrors };
   }
-  const { title, description, category, status, progress, dueDate, priority } =
+  const { title, description, category, status, progress, dueDate, priority, accentColor } =
     parsed.data;
   const task = await prisma.task.create({
     data: {
@@ -79,6 +118,7 @@ export async function createTask(data: TaskSchema) {
       progress: progress ?? 0,
       dueDate: dueDate ? new Date(dueDate) : null,
       priority: priority && priority !== "none" ? priority : null,
+      accentColor: accentColor?.trim() || null,
     },
   });
   revalidatePath("/");
@@ -90,7 +130,7 @@ export async function updateTask(id: string, data: TaskSchema) {
   if (!parsed.success) {
     return { error: parsed.error.flatten().fieldErrors };
   }
-  const { title, description, category, status, progress, dueDate, priority } =
+  const { title, description, category, status, progress, dueDate, priority, accentColor } =
     parsed.data;
   const task = await prisma.task.update({
     where: { id },
@@ -102,6 +142,7 @@ export async function updateTask(id: string, data: TaskSchema) {
       progress: progress ?? 0,
       dueDate: dueDate ? new Date(dueDate) : null,
       priority: priority && priority !== "none" ? priority : null,
+      accentColor: accentColor?.trim() || null,
     },
   });
   revalidatePath("/");

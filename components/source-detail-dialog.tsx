@@ -40,7 +40,14 @@ export function SourceDetailDialog({
             <Badge variant="secondary" className="capitalize">
               {source.type}
             </Badge>
-            <Badge variant="outline">
+            <Badge
+              variant="outline"
+              style={
+                source.category.color && /^#[0-9A-Fa-f]{6}$/.test(source.category.color)
+                  ? { borderColor: source.category.color, color: source.category.color }
+                  : undefined
+              }
+            >
               {source.category.name}
             </Badge>
             {topic && (

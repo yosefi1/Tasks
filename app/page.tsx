@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -25,8 +25,13 @@ import { useTasks } from "@/lib/hooks/use-tasks";
 import { useSources } from "@/lib/hooks/use-sources";
 import { useSourceCategories } from "@/lib/hooks/use-source-categories";
 import { SortableTaskList } from "@/components/sortable-task-list";
+import { TaskCategoryColorsDialog } from "@/components/task-category-colors-dialog";
 import type { TaskWithSteps } from "@/lib/types";
 import type { SourceWithCategory } from "@/lib/types";
+import type { TaskOrderBy } from "@/app/actions/tasks";
+import type { TaskCardViewVariant } from "@/components/task-card";
+import { useTaskCategoryStyles } from "@/lib/hooks/use-task-category-styles";
+import { cn } from "@/lib/utils";
 import {
   Plus,
   Search,
@@ -37,6 +42,10 @@ import {
   Bookmark,
   FileText,
   Settings,
+  LayoutGrid,
+  List,
+  Columns2,
+  Palette,
 } from "lucide-react";
 
 const statusOptions = [
@@ -57,7 +66,9 @@ export default function DashboardPage() {
   const [mainTab, setMainTab] = useState<"tasks" | "sources">("tasks");
   const [tasksSubTab, setTasksSubTab] = useState<"private" | "work">("work");
 
-  const [taskOrderBy, setTaskOrderBy] = useState<"date" | "custom">("date");
+  const [taskOrderBy, setTaskOrderBy] = useState<TaskOrderBy>("date");
+  const [taskViewMode, setTaskViewMode] = useState<TaskCardViewVariant>("grid");
+  const [taskColorsOpen, setTaskColorsOpen] = useState(false);
   const [status, setStatus] = useState<string>("all");
   const [priority, setPriority] = useState<string>("all");
   const [search, setSearch] = useState("");
@@ -106,6 +117,35 @@ export default function DashboardPage() {
     data: sourceCategories = [],
     isLoading: categoriesLoading,
   } = useSourceCategories();
+
+  const { data: taskCategoryStyles = [] } = useTaskCategoryStyles();
+
+  const taskCategoryColorMap = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const r of taskCategoryStyles) {
+      m[r.slug] = r.color;
+    }
+    if (!m.personal) m.personal = "#8b5cf6";
+    if (!m.work) m.work = "#0ea5e9";
+    return m;
+  }, [taskCategoryStyles]);
+
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem("taskViewMode");
+      if (v === "grid" || v === "list" || v === "compact") setTaskViewMode(v);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("taskViewMode", taskViewMode);
+    } catch {
+      /* ignore */
+    }
+  }, [taskViewMode]);
 
   const defaultSourceCategoryId = sourceCategories[0]?.id ?? "";
 
@@ -236,7 +276,20 @@ export default function DashboardPage() {
 
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Filters & order</CardTitle>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <CardTitle className="text-base">Filters & order</CardTitle>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => setTaskColorsOpen(true)}
+                    title="Colors for Private / Work tabs"
+                  >
+                    <Palette className="h-4 w-4" />
+                    <span className="hidden sm:inline">Tab colors</span>
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex flex-wrap gap-4">
@@ -249,15 +302,53 @@ export default function DashboardPage() {
                       className="pl-9"
                     />
                   </div>
-                  <Select value={taskOrderBy} onValueChange={(v) => setTaskOrderBy(v as "date" | "custom")}>
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Order by" />
+                  <Select value={taskOrderBy} onValueChange={(v) => setTaskOrderBy(v as TaskOrderBy)}>
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="date">By date</SelectItem>
-                      <SelectItem value="custom">Custom (drag to reorder)</SelectItem>
+                      <SelectItem value="date">Due date</SelectItem>
+                      <SelectItem value="custom">Manual (drag to reorder)</SelectItem>
+                      <SelectItem value="priority">Priority</SelectItem>
+                      <SelectItem value="title">Title (A–Z)</SelectItem>
+                      <SelectItem value="status">Status</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="text-muted-foreground text-sm shrink-0">View</span>
+                  <div className="inline-flex rounded-md border p-0.5">
+                    <Button
+                      type="button"
+                      variant={taskViewMode === "grid" ? "secondary" : "ghost"}
+                      size="sm"
+                      className="h-8 px-2"
+                      onClick={() => setTaskViewMode("grid")}
+                      title="Card grid"
+                    >
+                      <LayoutGrid className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={taskViewMode === "compact" ? "secondary" : "ghost"}
+                      size="sm"
+                      className="h-8 px-2"
+                      onClick={() => setTaskViewMode("compact")}
+                      title="Compact grid"
+                    >
+                      <Columns2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={taskViewMode === "list" ? "secondary" : "ghost"}
+                      size="sm"
+                      className="h-8 px-2"
+                      onClick={() => setTaskViewMode("list")}
+                      title="List"
+                    >
+                      <List className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Select value={status} onValueChange={setStatus}>
@@ -293,7 +384,7 @@ export default function DashboardPage() {
                 <h2 className="text-lg font-semibold">Tasks</h2>
                 {taskOrderBy === "custom" && tasks.length > 0 && (
                   <span className="text-muted-foreground text-sm">
-                    Drag the ⋮ handle on a card to reorder
+                    Drag the ⋮ handle to reorder (saved automatically)
                   </span>
                 )}
               </div>
@@ -328,13 +419,27 @@ export default function DashboardPage() {
                 <SortableTaskList
                   tasks={tasks}
                   onCardClick={openEditTask}
+                  viewMode={taskViewMode}
+                  categoryColors={taskCategoryColorMap}
                 />
               )}
-              {!isLoading && !isError && tasks.length > 0 && taskOrderBy === "date" && (
-                <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {!isLoading && !isError && tasks.length > 0 && taskOrderBy !== "custom" && (
+                <ul
+                  className={cn(
+                    taskViewMode === "list" && "flex flex-col gap-2",
+                    taskViewMode === "grid" && "grid gap-4 sm:grid-cols-2 lg:grid-cols-3",
+                    taskViewMode === "compact" &&
+                      "grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                  )}
+                >
                   {tasks.map((task: TaskWithSteps) => (
                     <li key={task.id}>
-                      <TaskCard task={task} onCardClick={openEditTask} />
+                      <TaskCard
+                        task={task}
+                        onCardClick={openEditTask}
+                        variant={taskViewMode}
+                        categoryColors={taskCategoryColorMap}
+                      />
                     </li>
                   ))}
                 </ul>
@@ -454,6 +559,7 @@ export default function DashboardPage() {
         categories={sourceCategories}
         categoriesLoading={categoriesLoading}
       />
+      <TaskCategoryColorsDialog open={taskColorsOpen} onOpenChange={setTaskColorsOpen} />
     </div>
   );
 }

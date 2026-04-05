@@ -13,6 +13,7 @@ import {
   updateTaskLink,
   deleteTaskLink,
   type TaskFilters,
+  type TaskOrderBy,
 } from "@/app/actions/tasks";
 import type { TaskSchema } from "@/lib/validations/task";
 
@@ -30,7 +31,7 @@ export function useTasks(filters: TaskFilters = {}) {
       if (filters.status) params.set("status", filters.status);
       if (filters.priority) params.set("priority", filters.priority);
       if (filters.search) params.set("search", filters.search);
-      if (filters.orderBy) params.set("orderBy", filters.orderBy);
+      if (filters.orderBy) params.set("orderBy", filters.orderBy as TaskOrderBy);
       const res = await fetch(`/api/tasks?${params.toString()}`);
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {

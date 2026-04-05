@@ -9,6 +9,8 @@ import { Calendar, GripVertical } from "lucide-react";
 import type { TaskWithSteps } from "@/lib/types";
 import { format } from "date-fns";
 import { useUpdateTaskStep } from "@/lib/hooks/use-tasks";
+import { resolveTaskStripeColor } from "@/lib/task-card-colors";
+import { cn } from "@/lib/utils";
 
 function StepProgressInput({
   stepId,
@@ -48,10 +50,14 @@ function StepProgressInput({
   );
 }
 
+export type TaskCardViewVariant = "grid" | "list" | "compact";
+
 type TaskCardProps = {
   task: TaskWithSteps;
   onCardClick: (task: TaskWithSteps) => void;
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement> | null;
+  variant?: TaskCardViewVariant;
+  categoryColors?: Record<string, string>;
 };
 
 const priorityVariant: Record<string, "default" | "secondary" | "destructive" | "outline" | "success" | "warning"> = {
@@ -66,7 +72,13 @@ const statusVariant: Record<string, "default" | "secondary" | "success" | "outli
   done: "success",
 };
 
-export function TaskCard({ task, onCardClick, dragHandleProps }: TaskCardProps) {
+export function TaskCard({
+  task,
+  onCardClick,
+  dragHandleProps,
+  variant = "grid",
+  categoryColors = {},
+}: TaskCardProps) {
   const updateStep = useUpdateTaskStep();
   const statusLabel =
     task.status === "in_progress" ? "In progress" : task.status === "done" ? "Done" : "Backlog";
@@ -79,12 +91,69 @@ export function TaskCard({ task, onCardClick, dragHandleProps }: TaskCardProps) 
         )
       : task.progress;
 
+  const stripe = resolveTaskStripeColor(task, categoryColors);
+
+  const isList = variant === "list";
+  const isCompact = variant === "compact";
+
+  if (isList) {
+    return (
+      <Card
+        className="flex cursor-pointer flex-row items-stretch overflow-hidden transition-shadow hover:shadow-md"
+        onClick={() => onCardClick(task)}
+        style={{ borderLeftWidth: 4, borderLeftColor: stripe }}
+      >
+        {dragHandleProps && (
+          <div
+            {...dragHandleProps}
+            onClick={(e) => e.stopPropagation()}
+            className="flex shrink-0 items-center border-r bg-muted/40 px-1 text-muted-foreground hover:bg-muted"
+          >
+            <GripVertical className="h-4 w-4" />
+          </div>
+        )}
+        <div className="flex min-w-0 flex-1 flex-col gap-2 p-3 sm:flex-row sm:items-center sm:gap-4">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="truncate font-semibold">{task.title}</h3>
+              <Badge variant={statusVariant[task.status] ?? "secondary"} className="shrink-0 capitalize">
+                {statusLabel}
+              </Badge>
+              {task.priority && (
+                <Badge variant={priorityVariant[task.priority] ?? "outline"} className="shrink-0 capitalize">
+                  {task.priority}
+                </Badge>
+              )}
+            </div>
+            <p className="text-muted-foreground mt-0.5 truncate text-xs capitalize">{task.category}</p>
+          </div>
+          <div className="flex shrink-0 items-center gap-3 text-sm">
+            <span className="tabular-nums text-muted-foreground">{progressFromSteps}%</span>
+            {steps.length > 0 && (
+              <span className="text-muted-foreground text-xs">{steps.length} steps</span>
+            )}
+            {task.dueDate && (
+              <span className="flex items-center gap-1 text-muted-foreground text-xs">
+                <Calendar className="h-3.5 w-3.5" />
+                {format(new Date(task.dueDate), "MMM d")}
+              </span>
+            )}
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card
-      className="flex flex-col cursor-pointer transition-shadow hover:shadow-md"
+      className={cn(
+        "flex cursor-pointer flex-col overflow-hidden transition-shadow hover:shadow-md",
+        isCompact && "shadow-sm"
+      )}
       onClick={() => onCardClick(task)}
+      style={{ borderLeftWidth: 4, borderLeftColor: stripe }}
     >
-      <CardHeader className="pb-2">
+      <CardHeader className={cn("pb-2", isCompact && "p-3 pb-2")}>
         <div className="flex items-start gap-2">
           {dragHandleProps && (
             <div
@@ -98,7 +167,14 @@ export function TaskCard({ task, onCardClick, dragHandleProps }: TaskCardProps) 
           )}
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-start justify-between gap-2">
-              <h3 className="font-semibold leading-tight line-clamp-2">{task.title}</h3>
+              <h3
+                className={cn(
+                  "font-semibold leading-tight line-clamp-2",
+                  isCompact && "text-sm line-clamp-1"
+                )}
+              >
+                {task.title}
+              </h3>
               <div className="flex shrink-0 gap-1">
                 <Badge variant={statusVariant[task.status] ?? "secondary"} className="capitalize">
                   {statusLabel}
@@ -110,17 +186,19 @@ export function TaskCard({ task, onCardClick, dragHandleProps }: TaskCardProps) 
                 )}
               </div>
             </div>
-            <Badge variant="outline" className="mt-1 w-fit capitalize">
+            <Badge variant="outline" className={cn("mt-1 w-fit capitalize", isCompact && "text-xs")}>
               {task.category}
             </Badge>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 space-y-3 pb-2">
+      <CardContent className={cn("flex-1 space-y-3 pb-2", isCompact && "space-y-2 p-3 pt-0")}>
         {task.description && (
-          <p className="text-muted-foreground text-sm line-clamp-2">{task.description}</p>
+          <p className={cn("text-muted-foreground line-clamp-2 text-sm", isCompact && "line-clamp-1 text-xs")}>
+            {task.description}
+          </p>
         )}
-        {steps.length > 0 && (
+        {steps.length > 0 && !isCompact && (
           <div className="space-y-1.5">
             <p className="text-xs font-medium text-muted-foreground">Steps</p>
             <ul className="space-y-2">
@@ -142,12 +220,15 @@ export function TaskCard({ task, onCardClick, dragHandleProps }: TaskCardProps) 
             </ul>
           </div>
         )}
+        {steps.length > 0 && isCompact && (
+          <p className="text-muted-foreground text-xs">{steps.length} steps — open to edit</p>
+        )}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>Progress</span>
             <span>{progressFromSteps}%</span>
           </div>
-          <Progress value={progressFromSteps} className="h-2" />
+          <Progress value={progressFromSteps} className={cn("h-2", isCompact && "h-1.5")} />
         </div>
         {task.dueDate && (
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -155,7 +236,7 @@ export function TaskCard({ task, onCardClick, dragHandleProps }: TaskCardProps) 
             <span>{format(new Date(task.dueDate), "MMM d, yyyy")}</span>
           </div>
         )}
-        {(task.links?.length ?? 0) > 0 && (
+        {(task.links?.length ?? 0) > 0 && !isCompact && (
           <div className="space-y-1.5">
             <p className="text-xs font-medium text-muted-foreground">Links</p>
             <ul className="space-y-1">
@@ -171,7 +252,7 @@ export function TaskCard({ task, onCardClick, dragHandleProps }: TaskCardProps) 
                     {link.displayName}
                   </a>
                   {link.note && (
-                    <p className="text-muted-foreground text-xs truncate" title={link.note}>
+                    <p className="truncate text-xs text-muted-foreground" title={link.note}>
                       {link.note}
                     </p>
                   )}
