@@ -11,6 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, ExternalLink } from "lucide-react";
 import type { SourceWithCategory } from "@/lib/types";
+import { getVideoEmbedInfo } from "@/lib/video-embed";
+import { VideoEmbedPreview } from "@/components/video-embed-preview";
+import { cn } from "@/lib/utils";
 
 type SourceDetailDialogProps = {
   open: boolean;
@@ -28,10 +31,16 @@ export function SourceDetailDialog({
   if (!source) return null;
 
   const topic = (source as { topic?: string | null }).topic;
+  const embedInfo = getVideoEmbedInfo(source.url);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent
+        className={cn(
+          "max-h-[90vh] overflow-y-auto",
+          embedInfo ? "sm:max-w-2xl" : "sm:max-w-lg"
+        )}
+      >
         <DialogHeader>
           <DialogTitle className="pr-8">{source.title}</DialogTitle>
         </DialogHeader>
@@ -54,6 +63,7 @@ export function SourceDetailDialog({
               <Badge variant="outline">{topic}</Badge>
             )}
           </div>
+          <VideoEmbedPreview url={source.url} embedInfo={embedInfo} />
           <div>
             <p className="text-muted-foreground text-xs font-medium">URL</p>
             <a
