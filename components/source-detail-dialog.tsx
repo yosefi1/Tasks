@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, ExternalLink } from "lucide-react";
+import { Trash2, ExternalLink, Pencil } from "lucide-react";
 import type { SourceWithCategory } from "@/lib/types";
 import { getVideoEmbedInfo } from "@/lib/video-embed";
 import { VideoEmbedPreview } from "@/components/video-embed-preview";
@@ -19,6 +19,7 @@ type SourceDetailDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   source: SourceWithCategory | null;
+  onEdit: (source: SourceWithCategory) => void;
   onDelete: (source: SourceWithCategory) => void;
 };
 
@@ -26,6 +27,7 @@ export function SourceDetailDialog({
   open,
   onOpenChange,
   source,
+  onEdit,
   onDelete,
 }: SourceDetailDialogProps) {
   if (!source) return null;
@@ -83,7 +85,14 @@ export function SourceDetailDialog({
             </div>
           )}
         </div>
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-between sm:gap-0">
+          <Button
+            variant="outline"
+            onClick={() => onEdit(source)}
+          >
+            <Pencil className="h-4 w-4 mr-2" />
+            Edit
+          </Button>
           <Button
             variant="destructive"
             onClick={() => {

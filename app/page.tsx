@@ -522,6 +522,11 @@ export default function DashboardPage() {
         open={sourceDetailOpen}
         onOpenChange={setSourceDetailOpen}
         source={selectedSource}
+        onEdit={(source) => {
+          setEditingSource(source);
+          setSourceFormOpen(true);
+          setSourceDetailOpen(false);
+        }}
         onDelete={(source) => {
           setSourceDetailOpen(false);
           setDeletingSource(source);
