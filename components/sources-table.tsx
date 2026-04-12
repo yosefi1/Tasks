@@ -21,14 +21,14 @@ type SourcesTableProps = {
 export function SourcesTable({ sources, onRowClick }: SourcesTableProps) {
   return (
     <div className="rounded-md border">
-      <Table>
+      <Table className="table-fixed w-full">
         <TableHeader>
           <TableRow>
-            <TableHead className="min-w-[140px]">Title</TableHead>
-            <TableHead className="w-[80px]">Type</TableHead>
-            <TableHead className="w-[100px]">Topic</TableHead>
-            <TableHead className="w-[80px]">Category</TableHead>
-            <TableHead className="min-w-[100px]">Link</TableHead>
+            <TableHead className="w-[28%] min-w-[140px]">Title</TableHead>
+            <TableHead className="w-[86px]">Type</TableHead>
+            <TableHead className="w-[12%] min-w-[96px]">Topic</TableHead>
+            <TableHead className="w-[24%] min-w-[180px]">Category</TableHead>
+            <TableHead className="w-[26%] min-w-[100px]">Link</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -58,8 +58,8 @@ export function SourcesTable({ sources, onRowClick }: SourcesTableProps) {
                   {(source as { topic?: string | null }).topic || "—"}
                 </span>
               </TableCell>
-              <TableCell>
-                <Badge variant="outline">
+              <TableCell className="whitespace-nowrap">
+                <Badge variant="outline" className="whitespace-nowrap font-normal">
                   {source.category.name}
                 </Badge>
               </TableCell>
