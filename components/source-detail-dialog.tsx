@@ -78,6 +78,20 @@ export function SourceDetailDialog({
               <ExternalLink className="h-4 w-4 shrink-0" />
             </a>
           </div>
+          {source.relatedUrl && (
+            <div>
+              <p className="text-muted-foreground text-xs font-medium">Related link</p>
+              <a
+                href={source.relatedUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 break-all text-primary hover:underline"
+              >
+                {source.relatedUrl}
+                <ExternalLink className="h-4 w-4 shrink-0" />
+              </a>
+            </div>
+          )}
           {source.notes && (
             <div>
               <p className="text-muted-foreground text-xs font-medium">Notes</p>

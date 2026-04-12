@@ -61,6 +61,7 @@ export function SourceFormDialog({
     defaultValues: {
       title: "",
       url: "",
+      relatedUrl: "",
       type: "site",
       categoryId: effectiveDefault,
       topic: "",
@@ -74,6 +75,7 @@ export function SourceFormDialog({
       form.reset({
         title: source.title,
         url: source.url,
+        relatedUrl: source.relatedUrl ?? "",
         type: source.type as "site" | "video",
         categoryId: source.categoryId,
         topic: source.topic ?? "",
@@ -84,6 +86,7 @@ export function SourceFormDialog({
       form.reset({
         title: "",
         url: "",
+        relatedUrl: "",
         type: "site",
         categoryId: effectiveDefault,
         topic: "",
@@ -155,6 +158,22 @@ export function SourceFormDialog({
             />
             {form.formState.errors.url && (
               <p className="text-sm text-destructive">{form.formState.errors.url.message}</p>
+            )}
+            <p className="text-muted-foreground text-xs">
+              Primary link — video embed uses this when it is a supported URL.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="relatedUrl">Related link</Label>
+            <Input
+              id="relatedUrl"
+              type="text"
+              placeholder="e.g. the site or product the source is about (optional)"
+              {...form.register("relatedUrl")}
+              className={form.formState.errors.relatedUrl ? "border-destructive" : ""}
+            />
+            {form.formState.errors.relatedUrl && (
+              <p className="text-sm text-destructive">{form.formState.errors.relatedUrl.message}</p>
             )}
           </div>
           <div className="space-y-2">

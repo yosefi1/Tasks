@@ -67,6 +67,7 @@ model Source {
   id         String         @id @default(cuid())
   title      String
   url        String
+  relatedUrl String? // optional: related site (e.g. product page) when primary url is video/article
   type       String // "site" | "video"
   categoryId String
   category   SourceCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)

@@ -20,6 +20,7 @@ export async function getSources(filters: SourceFilters = {}) {
     where.OR = [
       { title: { contains: filters.search.trim() } },
       { url: { contains: filters.search.trim() } },
+      { relatedUrl: { contains: filters.search.trim() } },
     ];
   }
 
@@ -34,9 +35,9 @@ export async function getSources(filters: SourceFilters = {}) {
 export async function createSource(data: SourceSchema) {
   const parsed = sourceSchema.safeParse(data);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
-  const { topic, ...rest } = parsed.data;
+  const { topic, relatedUrl, ...rest } = parsed.data;
   const source = await prisma.source.create({
-    data: { ...rest, topic: topic || null },
+    data: { ...rest, topic: topic || null, relatedUrl: relatedUrl ?? null },
     include: { category: true },
   });
   revalidatePath("/");
@@ -46,10 +47,10 @@ export async function createSource(data: SourceSchema) {
 export async function updateSource(id: string, data: SourceSchema) {
   const parsed = sourceSchema.safeParse(data);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
-  const { topic, ...rest } = parsed.data;
+  const { topic, relatedUrl, ...rest } = parsed.data;
   const source = await prisma.source.update({
     where: { id },
-    data: { ...rest, topic: topic || null },
+    data: { ...rest, topic: topic || null, relatedUrl: relatedUrl ?? null },
     include: { category: true },
   });
   revalidatePath("/");
@@ -96,6 +97,7 @@ export async function bulkCreateSources(
     const res = await createSource({
       title: title || url,
       url,
+      relatedUrl: undefined,
       type,
       categoryId,
       topic: "",
